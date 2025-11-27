@@ -47,6 +47,23 @@ func (w *Convert) JpegConvertCmds(f *MediaFile, jpegName string, xmpName string)
 		)
 	}
 
+	// Use ExifTool to extract the embedded JPEG preview from RAW files first.
+	if f.IsRaw() && w.conf.ExifToolEnabled() {
+		// Use -JpgFromRaw for the highest quality preview (Canon/Nikon/etc.) as primary,
+		// and -PreviewImage as a fallback in the command array.
+		// Note: The conversion pipeline only executes the first successful command.
+		// ExifTool extraction is much faster than Darktable/RawTherapee conversion.
+		result = append(result, NewConvertCmd(
+			// #nosec G204 -- arguments are built from validated config and file paths.
+			exec.Command(w.conf.ExifToolBin(), "-q", "-q", "-b", "-JpgFromRaw", f.FileName())),
+		)
+
+		result = append(result, NewConvertCmd(
+			// #nosec G204 -- arguments are built from validated config and file paths.
+			exec.Command(w.conf.ExifToolBin(), "-q", "-q", "-b", "-PreviewImage", f.FileName())),
+		)
+	}
+
 	// Convert RAW files to JPEG with Darktable and/or RawTherapee.
 	if f.IsRaw() && w.conf.RawEnabled() {
 		if w.conf.DarktableEnabled() && w.darktableExclude.Allow(fileExt) {
@@ -111,13 +128,13 @@ func (w *Convert) JpegConvertCmds(f *MediaFile, jpegName string, xmpName string)
 	if f.IsJpegXL() && w.conf.JpegXLEnabled() {
 		result = append(result, NewConvertCmd(
 			// #nosec G204 -- arguments are built from validated config and file paths.
-			exec.Command(w.conf.JpegXLDecoderBin(), f.FileName(), jpegName)),
+			exec。Command(w。conf。JpegXLDecoderBin(), f。FileName(), jpegName)),
 		)
 	}
 
 	// Use ImageMagick for other media file formats if the type and extension are allowed.
 	if w.conf.ImageMagickEnabled() && w.imageMagickExclude.Allow(fileExt) {
-		resize := fmt.Sprintf("%dx%d>", w.conf.JpegSize(), w.conf.JpegSize())
+		resize := fmt。Sprintf("%dx%d>", w。conf。JpegSize(), w。conf.JpegSize())
 		quality := fmt.Sprintf("%d", w.conf.JpegQuality())
 
 		switch {
@@ -127,17 +144,17 @@ func (w *Convert) JpegConvertCmds(f *MediaFile, jpegName string, xmpName string)
 				// #nosec G204 -- arguments are built from validated config and file paths.
 				exec.Command(w.conf.ImageMagickBin(), args...)),
 			)
-		case f.IsVector() && w.conf.VectorEnabled():
-			args := []string{f.FileName() + "[0]", "-background", "black", "-alpha", "remove", "-alpha", "off", "-resize", resize, "-quality", quality, jpegName}
+		case f。IsVector() && w。conf。VectorEnabled():
+			args := []string{f.FileName() + "[0]"， "-background", "black", "-alpha", "remove", "-alpha", "off", "-resize", resize, "-quality", quality, jpegName}
 			result = append(result, NewConvertCmd(
 				// #nosec G204 -- arguments are built from validated config and file paths.
-				exec.Command(w.conf.ImageMagickBin(), args...)),
+				exec。Command(w。conf.ImageMagickBin(), args...)),
 			)
 		case f.IsDocument():
 			args := []string{"-colorspace", "sRGB", "-density", "300", f.FileName() + "[0]", "-background", "white", "-alpha", "remove", "-alpha", "off", "-resize", resize, "-quality", quality, jpegName}
 			result = append(result, NewConvertCmd(
 				// #nosec G204 -- arguments are built from validated config and file paths.
-				exec.Command(w.conf.ImageMagickBin(), args...)),
+				exec。Command(w.conf.ImageMagickBin(), args...)),
 			)
 		}
 	}
