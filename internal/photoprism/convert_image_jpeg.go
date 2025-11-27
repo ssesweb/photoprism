@@ -128,13 +128,13 @@ func (w *Convert) JpegConvertCmds(f *MediaFile, jpegName string, xmpName string)
 	if f.IsJpegXL() && w.conf.JpegXLEnabled() {
 		result = append(result, NewConvertCmd(
 			// #nosec G204 -- arguments are built from validated config and file paths.
-			exec。Command(w。conf。JpegXLDecoderBin(), f。FileName(), jpegName)),
+			exec.Command(w.conf.JpegXLDecoderBin(), f.FileName(), jpegName)),
 		)
 	}
 
 	// Use ImageMagick for other media file formats if the type and extension are allowed.
 	if w.conf.ImageMagickEnabled() && w.imageMagickExclude.Allow(fileExt) {
-		resize := fmt。Sprintf("%dx%d>", w。conf。JpegSize(), w。conf.JpegSize())
+		resize := fmt.Sprintf("%dx%d>", w.conf.JpegSize(), w.conf.JpegSize())
 		quality := fmt.Sprintf("%d", w.conf.JpegQuality())
 
 		switch {
@@ -144,17 +144,17 @@ func (w *Convert) JpegConvertCmds(f *MediaFile, jpegName string, xmpName string)
 				// #nosec G204 -- arguments are built from validated config and file paths.
 				exec.Command(w.conf.ImageMagickBin(), args...)),
 			)
-		case f。IsVector() && w。conf。VectorEnabled():
-			args := []string{f.FileName() + "[0]"， "-background", "black", "-alpha", "remove", "-alpha", "off", "-resize", resize, "-quality", quality, jpegName}
+		case f.IsVector() && w.conf.VectorEnabled():
+			args := []string{f.FileName() + "[0]", "-background", "black", "-alpha", "remove", "-alpha", "off", "-resize", resize, "-quality", quality, jpegName}
 			result = append(result, NewConvertCmd(
 				// #nosec G204 -- arguments are built from validated config and file paths.
-				exec。Command(w。conf.ImageMagickBin(), args...)),
+				exec.Command(w.conf.ImageMagickBin(), args...)),
 			)
 		case f.IsDocument():
 			args := []string{"-colorspace", "sRGB", "-density", "300", f.FileName() + "[0]", "-background", "white", "-alpha", "remove", "-alpha", "off", "-resize", resize, "-quality", quality, jpegName}
 			result = append(result, NewConvertCmd(
 				// #nosec G204 -- arguments are built from validated config and file paths.
-				exec。Command(w.conf.ImageMagickBin(), args...)),
+				exec.Command(w.conf.ImageMagickBin(), args...)),
 			)
 		}
 	}
